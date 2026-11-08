@@ -1,0 +1,58 @@
+# Cluster-scoped objects. Apply before any application.
+# One namespace per app (ADR-006) so quotas, RBAC and future ArgoCD Applications
+# stay scoped to a single deployable unit.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jellyfin
+  labels:
+    app.kubernetes.io/part-of: cloud-native-homelab
+    kubernetes.io/metadata.name: jellyfin
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nextcloud
+  labels:
+    app.kubernetes.io/part-of: cloud-native-homelab
+    kubernetes.io/metadata.name: nextcloud
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: navidrome
+  labels:
+    app.kubernetes.io/part-of: cloud-native-homelab
+    kubernetes.io/metadata.name: navidrome
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: n8n
+  labels:
+    app.kubernetes.io/part-of: cloud-native-homelab
+    kubernetes.io/metadata.name: n8n
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openwebui
+  labels:
+    app.kubernetes.io/part-of: cloud-native-homelab
+    kubernetes.io/metadata.name: openwebui
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: observability
+  labels:
+    app.kubernetes.io/part-of: cloud-native-homelab
+    kubernetes.io/metadata.name: observability
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: platform
+  labels:
+    app.kubernetes.io/part-of: cloud-native-homelab
+    kubernetes.io/metadata.name: platform

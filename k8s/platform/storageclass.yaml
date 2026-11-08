@@ -1,0 +1,14 @@
+# Same provisioner as k3s's built-in "local-path", but Retain instead of Delete.
+# Deleting a PVC leaves the directory on the data volume for manual recovery (ADR-013).
+#
+# WaitForFirstConsumer: the PVC stays Pending until a pod uses it. That is expected.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-path-retain
+  labels:
+    app.kubernetes.io/part-of: cloud-native-homelab
+provisioner: rancher.io/local-path
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true

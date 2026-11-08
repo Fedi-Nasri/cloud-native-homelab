@@ -1,0 +1,64 @@
+# chart: community-charts/n8n 1.24.43 (appVersion 2.41.6)
+# repo:  https://community-charts.github.io/helm-charts
+#
+# ADR-020: public via a SEPARATE pinned Service (nodeport-service.yaml, 30079).
+# The chart's own Service has no nodePort support, so it stays ClusterIP here.
+# URL: http://<public-ip>:30079 — plaintext, SG must allow TCP 30079.
+# To see every key: helm show values community-charts/n8n --version 1.24.43
+
+image:
+  repository: n8nio/n8n
+  # Empty = chart appVersion (2.41.6); the pinned chart version keeps it reproducible.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+service:
+  # Internal ClusterIP; the public entry point is the extra Service in this folder.
+  type: ClusterIP
+  port: 5678
+
+# SQLite keeps this to one pod and one PVC. Postgres would add a second pod and volume.
+db:
+  type: sqlite
+
+main:
+  count: 1
+  persistence:
+    # Chart default is false -> emptyDir -> workflows and credentials vanish on restart.
+    enabled: true
+    mountPath: /home/node/.n8n
+    accessMode: ReadWriteOnce
+    size: 1Gi
+    storageClass: local-path-retain
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+# MAP, not a list: the chart renders `- name: {{ upper $key }}` from these pairs.
+extraEnvVars:
+  # Plaintext HTTP on a non-localhost host: without this, n8n sets a Secure cookie and
+  # the login form silently fails over http://.
+  N8N_SECURE_COOKIE: "false"
+  N8N_PROTOCOL: "http"
+  # WEBHOOK_URL is environment-specific (public IP) -> values.local.yaml.
+  # Maps merge, so the local file only needs to add that one key.
+
+# Empty = generated once by the chart and kept in a Secret named <release>-encryption-key.
+# If that Secret is lost, every stored credential becomes unreadable. Back it up.
+encryptionKey: ""
+
+timezone: UTC
+
+postgresql:
+  enabled: false
+redis:
+  enabled: false
+minio:
+  enabled: false
+
+ingress:
+  enabled: false

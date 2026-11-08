@@ -1,0 +1,71 @@
+# chart: grafana/loki 7.5.0 (app 3.6.16)
+# repo:  https://grafana.github.io/helm-charts
+#
+# Single-binary mode with filesystem storage — the only mode that fits one node and one disk.
+# The chart defaults (SimpleScalable + memcached + canary + gateway) deploy ~8 pods; all are
+# disabled here.
+#
+# Install AFTER kube-prometheus-stack so Grafana exists to receive the datasource.
+
+deploymentMode: SingleBinary
+
+loki:
+  auth_enabled: false
+  commonConfig:
+    replication_factor: 1
+  storage:
+    type: filesystem
+  schemaConfig:
+    configs:
+      - from: "2024-04-01"
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h
+  limits_config:
+    retention_period: 72h
+  compactor:
+    retention_enabled: true
+    delete_request_store: filesystem
+
+singleBinary:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 768Mi
+  persistence:
+    enabled: true
+    accessModes: ["ReadWriteOnce"]
+    size: 1Gi
+    storageClass: local-path-retain
+
+read:
+  replicas: 0
+write:
+  replicas: 0
+backend:
+  replicas: 0
+
+# Defaults that would add pods/RAM for no benefit on one node.
+gateway:
+  enabled: false
+chunksCache:
+  enabled: false
+resultsCache:
+  enabled: false
+memcached:
+  enabled: false
+test:
+  enabled: false
+lokiCanary:
+  enabled: false
+
+monitoring:
+  serviceMonitor:
+    enabled: true

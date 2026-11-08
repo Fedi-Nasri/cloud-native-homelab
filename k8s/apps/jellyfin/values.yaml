@@ -1,0 +1,68 @@
+# chart: jellyfin/jellyfin 3.7.0
+# repo:  https://jellyfin.github.io/jellyfin-helm
+#
+# Only overrides live here. To see every available key:
+#   helm show values jellyfin/jellyfin --version 3.7.0
+#
+# Sizing rationale: ai-context/project/architecture.md (8 GB RAM, 10 GB data volume).
+
+replicaCount: 1
+
+image:
+  repository: docker.io/jellyfin/jellyfin
+  # Empty = use the chart's appVersion. The chart version pins it, so this stays reproducible.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+service:
+  # ADR-017: public on purpose. NodePort lives in k3s's 30000-32767 range, so the URL is
+  # http://<node-public-ip>:30096 — NOT :8096. The security group must allow TCP 30096.
+  # Plaintext HTTP, no TLS. Hardening checklist in this folder's README.
+  type: NodePort
+  port: 8096
+  nodePort: 30096
+
+# Jellyfin's state lives in /config (SQLite + XML). The volume must stay writable,
+# and fsGroup makes the local-path directory writable for the container user.
+podSecurityContext:
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+
+persistence:
+  config:
+    enabled: true
+    type: pvc
+    accessMode: ReadWriteOnce
+    size: 1Gi                  # users, library DB, server identity — not media
+    storageClass: local-path-retain
+  media:
+    enabled: true
+    type: pvc
+    accessMode: ReadWriteOnce
+    size: 2Gi                  # test library only; 10 Gi total disk
+    storageClass: local-path-retain
+    readOnly: true             # the app must not be able to modify the library
+  cache:
+    enabled: false             # false = emptyDir: regenerable, keep it off the PVC
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi                # direct play only; software transcoding is not budgeted
+
+# Transcode scratch on emptyDir so a transcode can never fill the 1 Gi config PVC.
+volumes:
+  - name: transcodes
+    emptyDir:
+      sizeLimit: 1Gi
+volumeMounts:
+  - name: transcodes
+    mountPath: /transcodes
+
+ingress:
+  enabled: false               # no domain, no ingress controller needed

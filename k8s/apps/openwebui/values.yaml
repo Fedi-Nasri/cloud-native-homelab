@@ -1,0 +1,58 @@
+# chart: open-webui/open-webui 17.4.0 (appVersion 0.12.4)
+# repo:  https://helm.openwebui.com
+#
+# Public via NodePort 30078 (ADR-021). No model yet: without a provider key the model list
+# is empty. Add one later in values.local.yaml (gitignored, ADR-015).
+# To see every key: helm show values open-webui/open-webui --version 17.4.0
+
+image:
+  repository: ghcr.io/open-webui/open-webui
+  # Empty = chart appVersion (0.12.4).
+  tag: ""
+  pullPolicy: IfNotPresent
+
+service:
+  # ADR-021: public on purpose. URL http://<public-ip>:30078, plaintext.
+  # SG must allow TCP 30078. The chart honours service.nodePort directly.
+  type: NodePort
+  port: 80
+  containerPort: 8080
+  nodePort: 30078
+
+# No model yet: without a provider key the UI loads but the model list is empty.
+# Add later in values.local.yaml (openaiBaseApiUrl / openaiApiKey) and helm upgrade.
+#
+# SECURITY: the first registered user becomes admin. Create your account over
+# port-forward BEFORE opening TCP 30078, then uncomment this and upgrade:
+# extraEnvVars:
+#   - name: ENABLE_SIGNUP
+#     value: "false"
+
+persistence:
+  enabled: true
+  size: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClass: local-path-retain
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 2Gi
+
+# All four default to enabled in the chart. Ollama + pipelines would cost RAM this node
+# does not have; there is no GPU and no room for a local model.
+ollama:
+  enabled: false
+pipelines:
+  enabled: false
+tika:
+  enabled: false
+terminals:
+  enabled: false
+
+ingress:
+  enabled: false

@@ -1,0 +1,112 @@
+# chart: prometheus-community/kube-prometheus-stack 92.17.0 (app v0.94.2)
+# repo:  https://prometheus-community.github.io/helm-charts
+#
+# Downsized for a t3.large (8 GB) with a 10 Gi data volume. The chart defaults are far too
+# big: retention 10d with no size cap, and no PVC unless one is given.
+#
+# Grafana's admin password is NOT here. Create the Secret first:
+#   kubectl create secret generic grafana-admin -n observability \
+#     --from-literal=admin-user=admin --from-literal=admin-password='<strong-password>'
+
+prometheus:
+  prometheusSpec:
+    replicas: 1
+    retention: 3d
+    retentionSize: "1GB"
+    walCompression: true
+    scrapeInterval: 30s
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: "1"
+        memory: 1500Mi
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          storageClassName: local-path-retain
+          resources:
+            requests:
+              storage: 2Gi
+    # Pick up ServiceMonitors/PodMonitors from other releases (Loki, promtail) too.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+
+alertmanager:
+  alertmanagerSpec:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          storageClassName: local-path-retain
+          resources:
+            requests:
+              storage: 256Mi
+
+grafana:
+  enabled: true
+  adminUser: admin
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
+  persistence:
+    enabled: true
+    type: pvc
+    storageClassName: local-path-retain
+    accessModes: ["ReadWriteOnce"]
+    size: 512Mi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 512Mi
+  service:
+    type: ClusterIP
+
+# k3s does not expose these the way kubeadm does; scraping them only produces noise and
+# "down" alerts. Disable the scrape AND the matching default rules.
+kubeEtcd:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: false
+
+defaultRules:
+  rules:
+    etcd: false
+    kubeControllerManager: false
+    kubeProxy: false
+    kubeSchedulerAlerting: false
+    kubeSchedulerRecording: false
+
+# A deterministic alert for the T11 "fires on purpose" check: true from the first scrape.
+# Remove this block (or set the rule off) after capturing the screenshot.
+additionalPrometheusRulesMap:
+  homelab-demo:
+    groups:
+      - name: homelab-demo
+        rules:
+          - alert: HomelabAlertPipelineTest
+            expr: vector(1)
+            for: 1m
+            labels:
+              severity: warning
+            annotations:
+              summary: "Alerting pipeline works (T11 test rule)"
+              description: "Always firing. Delete homelab-demo after the screenshot."

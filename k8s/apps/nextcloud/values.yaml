@@ -1,0 +1,98 @@
+# chart: nextcloud/nextcloud 9.4.1 (appVersion 35.0.2, flavor apache)
+# repo:  https://nextcloud.github.io/helm
+#
+# Only overrides live here. To see every key:
+#   helm show values nextcloud/nextcloud --version 9.4.1
+#
+# Secrets do NOT live here (ADR-015): the admin password and the public IP go in
+# values.local.yaml, which is gitignored. Copy values.local.example.yaml first.
+#
+# Sizing rationale: ai-context/project/architecture.md (8 GB RAM, 10 GB data volume).
+
+replicaCount: 1
+
+image:
+  repository: library/nextcloud
+  flavor: apache
+  # Empty = chart appVersion (35.0.2); the pinned chart version keeps it reproducible.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+service:
+  # ADR-018: public on purpose, plaintext. URL is http://<public-ip>:30080
+  # (k3s NodePort range 30000-32767). SG must allow TCP 30080.
+  type: NodePort
+  port: 8080
+  nodePort: 30080
+
+nextcloud:
+  # Overridden by values.local.yaml with the real public IP (IPs are not committed).
+  host: nextcloud.local
+  username: admin
+  # password: from values.local.yaml only
+  datadir: /var/www/html/data
+  # Browser Host must be trusted or Nextcloud answers "access through untrusted domain".
+  # values.local.yaml replaces this whole list.
+  trustedDomains:
+    - nextcloud.local
+    - localhost
+    - 127.0.0.1
+  phpConfigs:
+    upload.ini: |-
+      upload_max_filesize = 2G
+      post_max_size = 2G
+      memory_limit = 512M
+
+# SQLite (chart default). Backlog said Postgres; deviation recorded in ADR-018.
+# Do NOT enable postgresql/mariadb here: internalDatabase wins in the chart templates.
+internalDatabase:
+  enabled: true
+  name: nextcloud
+postgresql:
+  enabled: false
+mariadb:
+  enabled: false
+redis:
+  enabled: false
+collabora:
+  enabled: false
+imaginary:
+  enabled: false
+
+persistence:
+  # Chart default is false -> emptyDir. Must stay true or every file vanishes on restart.
+  enabled: true
+  accessMode: ReadWriteOnce
+  size: 5Gi
+  storageClass: local-path-retain
+
+# Cron as a Kubernetes CronJob (the sidecar mode runs crond as root).
+cronjob:
+  enabled: true
+  type: cronjob
+  cronjob:
+    schedule: "*/5 * * * *"
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 3
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+# First boot runs migrations; the startup probe gives it up to ~5 minutes.
+startupProbe:
+  enabled: true
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+ingress:
+  enabled: false

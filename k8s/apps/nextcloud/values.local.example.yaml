@@ -1,0 +1,19 @@
+# Copy me:
+#   cp k8s/apps/nextcloud/values.local.example.yaml k8s/apps/nextcloud/values.local.yaml
+# Then edit the copy. values.local.yaml is gitignored and must NEVER be committed.
+#
+# Two things are secrets or environment-specific and therefore belong here:
+#   1. the admin password
+#   2. the node's public IP (it changes on stop/start because there is no Elastic IP)
+
+nextcloud:
+  # Must match how you open the app in the browser. Include the port when it is not 80/443.
+  host: "203.0.113.10:30080"
+  username: admin
+  password: "CHANGE_ME_use_a_long_unique_password"
+  # Lists are REPLACED, not merged: restate the values.yaml entries you want to keep.
+  trustedDomains:
+    - "203.0.113.10:30080"
+    - "203.0.113.10"
+    - localhost
+    - 127.0.0.1

@@ -1,0 +1,10 @@
+# Copy me:
+#   cp k8s/apps/n8n/values.local.example.yaml k8s/apps/n8n/values.local.yaml
+# Then edit the copy. values.local.yaml is gitignored — never commit it.
+#
+# extraEnvVars is a MAP, and maps merge across values files: this file only needs to add
+# WEBHOOK_URL. The base values keep N8N_SECURE_COOKIE and N8N_PROTOCOL.
+
+extraEnvVars:
+  # Must match how you open the editor, including the NodePort.
+  WEBHOOK_URL: "http://203.0.113.10:30079/"

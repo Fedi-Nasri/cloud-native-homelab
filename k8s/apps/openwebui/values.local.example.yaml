@@ -1,0 +1,8 @@
+# Copy me:
+#   cp k8s/apps/openwebui/values.local.example.yaml k8s/apps/openwebui/values.local.yaml
+# Then fill in the provider URL and key. values.local.yaml is gitignored — never commit it.
+#
+# Works with any OpenAI-compatible API (OpenAI, Groq, Together, OpenRouter, a remote Ollama).
+
+openaiBaseApiUrl: "https://api.openai.com/v1"
+openaiApiKey: "CHANGE_ME_provider_api_key"

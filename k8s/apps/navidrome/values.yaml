@@ -1,0 +1,66 @@
+# chart: djjudas21/navidrome 6.8.7 (appVersion 0.64.2)
+# repo:  https://djjudas21.github.io/charts
+#
+# The chart inherits the bjw-s `common` library 0.2.2: only chart-specific keys are set here.
+# To see the full surface: helm show values djjudas21/navidrome --version 6.8.7
+#
+# ADR-019: public on purpose. NodePort 30081 -> http://<public-ip>:30081 (plaintext).
+# SG must allow TCP 30081. Sizing: ai-context/project/architecture.md (8 GB RAM, 10 GB data volume).
+
+image:
+  repository: deluan/navidrome
+  # Empty = chart appVersion (0.64.2); the pinned chart version keeps it reproducible.
+  tag: ""
+  pullPolicy: IfNotPresent
+
+env:
+  TZ: UTC
+  ND_LOGLEVEL: info
+  # These two are already the image defaults; stated explicitly so they cannot drift.
+  ND_MUSICFOLDER: /music
+  ND_DATAFOLDER: /data
+  ND_SCANNER_SCHEDULE: "1h"
+  ND_SESSIONTIMEOUT: 24h
+  ND_ENABLESHARING: "false"
+  ND_PROMETHEUS_ENABLED: "false"
+
+service:
+  main:
+    type: NodePort
+    ports:
+      http:
+        port: 4533
+        nodePort: 30081
+
+persistence:
+  # SQLite DB + cache.
+  config:
+    enabled: true
+    type: pvc
+    mountPath: /data
+    accessMode: ReadWriteOnce
+    size: 512Mi
+    storageClass: local-path-retain
+    retain: true
+  # Music library: read-only for the pod, like Jellyfin's media volume.
+  music:
+    enabled: true
+    type: pvc
+    mountPath: /music
+    accessMode: ReadWriteOnce
+    size: 1Gi
+    storageClass: local-path-retain
+    readOnly: true
+    retain: true
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+ingress:
+  main:
+    enabled: false
