@@ -1,0 +1,47 @@
+#cloud-config
+package_update: true
+packages:
+  - curl
+  - ca-certificates
+  - e2fsprogs
+
+runcmd:
+  - |
+    set -eux
+    DEV=""
+    for i in $(seq 1 60); do
+      DEV=$(lsblk -dpno NAME,SIZE | awk '$2=="10G"{print $1; exit}')
+      [ -n "$DEV" ] && break
+      sleep 5
+    done
+    [ -n "$DEV" ] || { echo "10G data volume not found"; exit 1; }
+    if ! blkid "$DEV" >/dev/null 2>&1; then
+      mkfs.ext4 -L cnh-data "$DEV"
+    fi
+    if [ "$(blkid -s LABEL -o value "$DEV" 2>/dev/null || true)" != "cnh-data" ]; then
+      e2label "$DEV" cnh-data
+    fi
+    mkdir -p /var/lib/rancher/k3s/storage
+    if ! mountpoint -q /var/lib/rancher/k3s/storage; then
+      mount LABEL=cnh-data /var/lib/rancher/k3s/storage
+    fi
+    grep -q 'LABEL=cnh-data' /etc/fstab || \
+      echo 'LABEL=cnh-data /var/lib/rancher/k3s/storage ext4 defaults,nofail 0 2' >> /etc/fstab
+  - |
+    set -eux
+    curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.37.2+k3s1 sh -s - --write-kubeconfig-mode 640
+  - |
+    set -eux
+    HELM_VERSION=v3.22.1
+    curl -fsSL -o /tmp/helm.tgz "https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz"
+    tar -xzf /tmp/helm.tgz -C /tmp
+    install -m 0755 /tmp/linux-amd64/helm /usr/local/bin/helm
+    rm -rf /tmp/helm.tgz /tmp/linux-amd64
+  - |
+    set -eux
+    HELMFILE_VERSION=v1.8.3
+    curl -fsSL -o /tmp/helmfile.tgz \
+      "https://github.com/helmfile/helmfile/releases/download/${HELMFILE_VERSION}/helmfile_1.8.3_linux_amd64.tar.gz"
+    tar -xzf /tmp/helmfile.tgz -C /tmp
+    install -m 0755 /tmp/helmfile /usr/local/bin/helmfile
+    rm -rf /tmp/helmfile.tgz /tmp/helmfile

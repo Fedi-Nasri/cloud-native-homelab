@@ -1,7 +1,7 @@
 # chart: prometheus-community/kube-prometheus-stack 92.17.0 (app v0.94.2)
 # repo:  https://prometheus-community.github.io/helm-charts
 #
-# Downsized for a t3.large (8 GB) with a 10 Gi data volume. The chart defaults are far too
+# Downsized for an 8 GB node with a 10 Gi data volume. The chart defaults are far too
 # big: retention 10d with no size cap, and no PVC unless one is given.
 #
 # Grafana's admin password is NOT here. Create the Secret first:

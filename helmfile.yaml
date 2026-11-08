@@ -1,0 +1,82 @@
+helmDefaults:
+  wait: true
+  timeout: 900
+
+repositories:
+  - name: jellyfin
+    url: https://jellyfin.github.io/jellyfin-helm
+  - name: nextcloud
+    url: https://nextcloud.github.io/helm
+  - name: djjudas21
+    url: https://djjudas21.github.io/charts
+  - name: community-charts
+    url: https://community-charts.github.io/helm-charts
+  - name: open-webui
+    url: https://helm.openwebui.com
+  - name: prometheus-community
+    url: https://prometheus-community.github.io/helm-charts
+  - name: grafana
+    url: https://grafana.github.io/helm-charts
+
+releases:
+  - name: jellyfin
+    namespace: jellyfin
+    chart: jellyfin/jellyfin
+    version: 3.7.0
+    values:
+      - k8s/apps/jellyfin/values.yaml
+
+  - name: nextcloud
+    namespace: nextcloud
+    chart: nextcloud/nextcloud
+    version: 9.4.1
+    values:
+      - k8s/apps/nextcloud/values.yaml
+      - k8s/apps/nextcloud/values.local.yaml
+
+  - name: navidrome
+    namespace: navidrome
+    chart: djjudas21/navidrome
+    version: 6.8.7
+    values:
+      - k8s/apps/navidrome/values.yaml
+
+  - name: n8n
+    namespace: n8n
+    chart: community-charts/n8n
+    version: 1.24.43
+    values:
+      - k8s/apps/n8n/values.yaml
+      - k8s/apps/n8n/values.local.yaml
+
+  - name: openwebui
+    namespace: openwebui
+    chart: open-webui/open-webui
+    version: 17.4.0
+    values:
+      - k8s/apps/openwebui/values.yaml
+
+  - name: kube-prometheus-stack
+    namespace: observability
+    chart: prometheus-community/kube-prometheus-stack
+    version: 92.17.0
+    values:
+      - k8s/observability/kube-prometheus-stack/values.yaml
+
+  - name: loki
+    namespace: observability
+    chart: grafana/loki
+    version: 7.5.0
+    values:
+      - k8s/observability/loki/values.yaml
+    needs:
+      - observability/kube-prometheus-stack
+
+  - name: promtail
+    namespace: observability
+    chart: grafana/promtail
+    version: 6.17.1
+    values:
+      - k8s/observability/promtail/values.yaml
+    needs:
+      - observability/loki

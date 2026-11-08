@@ -2,6 +2,9 @@
 
 Everything that runs inside the cluster. One folder per deployable unit.
 
+> **Automated path:** `../helmfile.yaml` + `../scripts/deploy.sh` install every release below.
+> The manual commands in this README remain for debugging and for understanding each step.
+
 ## Layout
 
 ```
@@ -172,6 +175,9 @@ Every public app needs a unique NodePort in 30000–32767 and its own SG rule.
 **Five plaintext ports.** Hard stop: no sixth port. The next public app must go behind one
 front door (Traefik Ingress + TLS, or Tailscale Funnel), and these ports should be collapsed
 behind it.
+
+> Drift (2026-11-08): the AWS security group also allows TCP 30076 and SSH 22 from
+> `0.0.0.0/0`. There is no Service on 30076. Both are removed/restricted in T20.
 
 Bump the version here **and** in the values-file header together. Read the chart changelog
 first: renamed values are silently ignored and the release "succeeds" with old behaviour.

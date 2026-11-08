@@ -139,7 +139,7 @@ Record any IAM/console change the same day — it is Terraform input later (back
 
 ### Option C — run the model yourself
 
-Ollama or vLLM on a GPU instance (`g5`/`g6`). The `t3.large` has no GPU and 8 GB of shared RAM,
+Ollama or vLLM on a GPU instance (`g5`/`g6`). The 8 GB node has no GPU and shared RAM,
 so this is a different project. Not recommended here.
 
 ## Prove persistence

@@ -74,6 +74,11 @@ cronjob:
     schedule: "*/5 * * * *"
     successfulJobsHistoryLimit: 3
     failedJobsHistoryLimit: 3
+    # Must run as the same user that owns config/config.php (www-data, uid 33).
+    securityContext:
+      runAsUser: 33
+      runAsGroup: 33
+      runAsNonRoot: true
     resources:
       requests:
         cpu: 10m
